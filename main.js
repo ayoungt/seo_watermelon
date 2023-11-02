@@ -1,3 +1,4 @@
+
 import {Bodies, Body, Engine, Events, Render, Runner,World} from "matter-js";
 import {FRUITS } from  "./fruits"
 
@@ -48,32 +49,65 @@ let disableAction = null;
 let interval = null;
 
 function addFruit() {
-  const index = Math.floor(Math.random() * 5);
+  const index = Math.floor(Math.random() * FRUITS.length); // Adjust the range as needed
   const fruit = FRUITS[index];
 
-  const body = Bodies.circle(300,50, fruit.radius, {
-    index: index,
+  const body = Bodies.circle(310, 50, fruit.radius, {
     isSleeping: true,
     render: {
-      sprite: { texture: `${fruit.name}.png`}
+      sprite: { texture: `${fruit.name}.png` },
     },
-    restitution:0.2,
+    restitution: 0.2,
   });
+
+  World.add(world, body);
+
+  // Add a click event listener to the new fruit
+  body.el = document.createElement("img");
+  body.el.src = `${fruit.name}.png`;
+  body.el.style.position = "absolute";
+  body.el.style.left = `${body.position.x}px`;
+  body.el.style.top = `${body.position.y}px`;
+
+  body.el.addEventListener("click", () => {
+    moveFruit("right"); // You can change this to "left" if you want to move left initially
+  });
+
+  document.body.appendChild(body.el);
 
   currentBody = body;
   currentFruit = fruit;
+}
 
-  function moveFruit(direction) {
-  if (!currentBody || disableAction) {
-    return;
-  }
+function addFruit() {
+  const index = Math.floor(Math.random() * FRUITS.length); // Adjust the range as needed
+  const fruit = FRUITS[index];
 
-  const increment = direction === "left" ? -1 : 1;
-  const newPositionX = currentBody.position.x + increment;
+  const body = Bodies.circle(310, 50, fruit.radius, {
+    isSleeping: true,
+    render: {
+      sprite: { texture: `${fruit.name}.png` },
+    },
+    restitution: 0.2,
+  });
 
-  if (newPositionX >= 30 && newPositionX <= 590) {
-    Body.setPosition(currentBody, { x: newPositionX, y: currentBody.position.y });
-  }
+  World.add(world, body);
+
+  // Add a click event listener to the new fruit
+  body.el = document.createElement("img");
+  body.el.src = `${fruit.name}.png`;
+  body.el.style.position = "absolute";
+  body.el.style.left = `${body.position.x}px`;
+  body.el.style.top = `${body.position.y}px`;
+
+  body.el.addEventListener("click", () => {
+    moveFruit("right"); // You can change this to "left" if you want to move left initially
+  });
+
+  document.body.appendChild(body.el);
+
+  currentBody = body;
+  currentFruit = fruit;
 }
 
 // Event listeners for clicking and touching
@@ -105,8 +139,9 @@ document.addEventListener("touchend", () => {
   interval = null;
 });
 
-  World.add(world, body);
-}
+
+
+
 
 window.onkeydown = (event) => {
   if (disableAction)
@@ -206,7 +241,5 @@ Events.on(engine, "collisionStart", (event) => {
 });
 
 addFruit();
-
-
 
 
