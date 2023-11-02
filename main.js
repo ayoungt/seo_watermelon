@@ -1,63 +1,63 @@
-import { Bodies, Body, Engine, Render, Runner, World } from "matter-js";
-import { FRUITS } from "./fruits";
+import {Bodies, Body, Engine, Events, Render, Runner,World} from "matter-js";
+import {FRUITS } from  "./fruits"
 
 const engine = Engine.create();
 const render = Render.create({
   engine,
-  element: document.body,
+  element: document. body,
   options: {
     wireframes: false,
     background: "#F7F4C8",
     width: 620,
     height: 850,
-  },
+  }
 });
 
 const world = engine.world;
 
-const leftWall = Bodies.rectangle(15, 395, 30, 790, {
+const leftWall = Bodies.rectangle(15,395,30,790, {
   isStatic: true,
-  render: { fillStyle: "#E6B143" },
+  render: {fillStyle: "#E6B143"}
 });
 
-const rightWall = Bodies.rectangle(605, 395, 30, 790, {
+const rightWall = Bodies.rectangle(605,395,30,790, {
   isStatic: true,
-  render: { fillStyle: "#E6B143" },
+  render: {fillStyle: "#E6B143"}
 });
 
-const ground = Bodies.rectangle(310, 820, 620, 60, {
+const ground = Bodies.rectangle(310,820,620,60, {
   isStatic: true,
-  render: { fillStyle: "#E6B143" },
+  render: {fillStyle: "#E6B143"}
 });
 
-const topLine = Bodies.rectangle(310, 150, 620, 2, {
+const topLine = Bodies.rectangle(310,150,620,2, {
   name: "topLine",
   isStatic: true,
   isSensor: true,
-  render: { fillStyle: "#E6B143" },
+  render: {fillStyle: "#E6B143"}
 });
 
-World.add(world, [leftWall, rightWall, ground, topLine]);
+World.add(world, [leftWall,rightWall,ground,topLine]);
 
 Render.run(render);
 Runner.run(engine);
 
 let currentBody = null;
 let currentFruit = null;
-let disableAction = false;
+let disableAction = null;
 let interval = null;
 
 function addFruit() {
   const index = Math.floor(Math.random() * 5);
   const fruit = FRUITS[index];
 
-  const body = Bodies.circle(300, 50, fruit.radius, {
+  const body = Bodies.circle(300,50, fruit.radius, {
     index: index,
     isSleeping: true,
     render: {
-      sprite: { texture: `${fruit.name}.png` },
+      sprite: { texture: `${fruit.name}.png`}
     },
-    restitution: 0.2,
+    restitution:0.2,
   });
 
   currentBody = body;
@@ -66,59 +66,103 @@ function addFruit() {
   World.add(world, body);
 }
 
-function moveFruit(direction) {
-  if (!currentBody || disableAction) {
+
+window.onkeydown = (event) => {
+  if (disableAction)
+  {
     return;
   }
+  switch(event.code)
+  {
+    case "KeyA":
+      if (interval)
+      return;
 
-  const increment = direction === "left" ? -1 : 1;
-  const newPositionX = currentBody.position.x + increment;
+      interval = setInterval(() => {
+        if (currentBody.position.x - currentFruit.radius > 30)
+        Body.setPosition(currentBody,{
+          x:currentBody.position.x - 1,
+          y: currentBody.position.y,
+        });
+      },);
+      
+      break;
 
-  if (newPositionX >= 30 && newPositionX <= 590) {
-    Body.setPosition(currentBody, { x: newPositionX, y: currentBody.position.y });
+
+    case "KeyD":
+      if (interval)
+        return;
+      
+      interval = setInterval(() => {
+        if (currentBody.position.x + currentFruit.radius < 590)
+        Body.setPosition(currentBody,{
+         x:currentBody.position.x + 1,
+         y: currentBody.position.y,
+        });
+      },5)
+
+      
+      break;
+
+    case "KeyS":
+      currentBody.isSleeping = false;
+      disableAction = true;
+
+      setTimeout(() => {
+        addFruit();  
+        disableAction = false;
+      },1000);
+      
+      break;
+
   }
 }
 
-// Event listeners for clicking and touching
-document.addEventListener("click", () => {
-  if (disableAction) {
-    return;
+window.onkeyup = (event) => {
+  switch (event.code){
+    case "KeyA":
+    case "KeyD":
+        clearInterval(interval);
+        interval = null;
   }
-  currentBody.isSleeping = false;
-  disableAction = true;
-  setTimeout(() => {
-    addFruit();
-    disableAction = false;
-  }, 1000);
-});
+}
 
-// Touch events for mobile
-let touchStartX = 0;
+Events.on(engine, "collisionStart", (event) => {
+  event.pairs.forEach((collision => {
+    if (collision.bodyA.index === collision.bodyB.index) {
+      const index = collision.bodyA.index;
+      if(index === FRUITS.length - 1){
+        return;
+      }
+      
+      World.remove(world, [collision.bodyA, collision.bodyB]);
 
-document.addEventListener("touchstart", (event) => {
-  touchStartX = event.touches[0].clientX;
-});
+      const newFruit = FRUITS[index + 1];
+      
+      const newBody = Bodies.circle(
+        collision.collision.supports[0].x,
+        collision.collision.supports[0].y,
+        newFruit.radius,
+        {
+          render: {
+            sprite: {texture: `${newFruit.name}.png`}
+          },
+          index: index + 1,
+        }
+      );
 
-document.addEventListener("touchmove", (event) => {
-  const touchX = event.touches[0].clientX;
-  const screenWidth = window.innerWidth;
-  const moveThreshold = 30;
+     World.add(world, newBody);
+    }
 
-  if (touchX - touchStartX > moveThreshold) {
-    moveFruit("right");
-    touchStartX = touchX;
-  } else if (touchStartX - touchX > moveThreshold) {
-    moveFruit("left");
-    touchStartX = touchX;
-  }
-});
+    if (
+      !disableAction &&
+      (collision.bodyA.name === "topLine" || collision.bodyB.name === "topLine")) {
+      alert("One more time DOPAMIN?");
+    }
 
-document.addEventListener("touchend", () => {
-  // Stop moving the fruit when the touch ends
-  clearInterval(interval);
-  interval = null;
+
+  }));
 });
 
 addFruit();
-
 
