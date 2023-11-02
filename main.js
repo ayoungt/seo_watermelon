@@ -63,6 +63,48 @@ function addFruit() {
   currentBody = body;
   currentFruit = fruit;
 
+  function moveFruit(direction) {
+  if (!currentBody || disableAction) {
+    return;
+  }
+
+  const increment = direction === "left" ? -1 : 1;
+  const newPositionX = currentBody.position.x + increment;
+
+  if (newPositionX >= 30 && newPositionX <= 590) {
+    Body.setPosition(currentBody, { x: newPositionX, y: currentBody.position.y });
+  }
+}
+
+// Event listeners for clicking and touching
+document.addEventListener("click", () => {
+  if (disableAction) {
+    return;
+  }
+  currentBody.isSleeping = false;
+  disableAction = true;
+  setTimeout(() => {
+    addFruit();
+    disableAction = false;
+  }, 1000);
+});
+
+document.addEventListener("touchstart", (event) => {
+  const touchX = event.touches[0].clientX;
+  const screenWidth = window.innerWidth;
+  if (touchX < screenWidth / 2) {
+    moveFruit("left");
+  } else {
+    moveFruit("right");
+  }
+});
+
+document.addEventListener("touchend", () => {
+  // Stop moving the fruit when the touch ends
+  clearInterval(interval);
+  interval = null;
+});
+
   World.add(world, body);
 }
 
